@@ -249,7 +249,7 @@ textarea{min-height:74px;resize:vertical}
   <div class="panel" id="stat-detail-panel" style="margin-top:-4px"></div>
   <div class="sync-row"><span class="sdot" id="ssd"></span><span id="sst">Listo</span></div>
   <p class="sec-title">Nueva actividad</p>
-  <div class="card" onclick="gt('s-ins-init')">
+  <div class="card" onclick="gt('s-cl-menu')">
     <div class="card-row">
       <div class="icon-box" style="background:#E6F1FB"><i class="ti ti-clipboard-check" style="color:#185FA5;font-size:24px"></i></div>
       <div style="flex:1"><div class="card-label">Inspección de seguridad</div><div class="card-desc">Checklist por área</div></div>
@@ -432,9 +432,9 @@ textarea{min-height:74px;resize:vertical}
 
 <!-- INSPECCION INIT -->
 <div id="s-ins-init" class="scr">
-  <button class="btn-sm" onclick="gt('s-home')" style="margin-bottom:14px"><i class="ti ti-arrow-left"></i> Inicio</button>
-  <div class="page-title">Inspección de seguridad</div>
-  <div class="page-sub">Configura la inspección antes de comenzar</div>
+  <button class="btn-sm" onclick="gt('s-cl-menu')" style="margin-bottom:14px"><i class="ti ti-arrow-left"></i> Volver</button>
+  <div class="page-title" id="ins-init-title">Inspección de seguridad</div>
+  <div class="page-sub" id="ins-init-sub">Configura la inspección antes de comenzar</div>
   <label class="fl">Razón social</label>
   <select id="ins-rs">
     <option value="">Seleccionar...</option>
@@ -458,13 +458,15 @@ textarea{min-height:74px;resize:vertical}
   <select id="ins-seccion"><option value="">Seleccionar área primero</option></select>
   <label class="fl">Turno</label>
   <select id="ins-turno"><option value="">Seleccionar...</option><option>Mañana</option><option>Tarde</option><option>Noche</option></select>
+  <label class="fl">Notas / contexto (opcional)</label>
+  <textarea id="ins-notas" placeholder="Contexto de la inspección, motivo, antecedentes..." style="min-height:60px"></textarea>
   <button class="btn btn-black" onclick="iIns()">Iniciar checklist</button>
-  <button class="btn btn-sec" onclick="gt('s-home')">Cancelar</button>
+  <button class="btn btn-sec" onclick="gt('s-cl-menu')">Cancelar</button>
 </div>
 
 <!-- MENÚ SELECCIÓN CHECKLIST -->
 <div id="s-cl-menu" class="scr">
-  <button class="btn-sm" onclick="gt('s-ins-init')" style="margin-bottom:14px"><i class="ti ti-arrow-left"></i> Volver</button>
+  <button class="btn-sm" onclick="gt('s-home')" style="margin-bottom:14px"><i class="ti ti-arrow-left"></i> Inicio</button>
   <div class="page-title">Tipo de inspección</div>
   <div class="page-sub">Selecciona el checklist a aplicar</div>
   <div id="cl-menu-body"></div>
@@ -472,7 +474,7 @@ textarea{min-height:74px;resize:vertical}
 
 <!-- CHECKLIST -->
 <div id="s-cl" class="scr">
-  <button class="btn-sm" onclick="gt('s-cl-menu')" style="margin-bottom:10px"><i class="ti ti-arrow-left"></i> Volver</button>
+  <button class="btn-sm" onclick="gt('s-ins-init')" style="margin-bottom:10px"><i class="ti ti-arrow-left"></i> Volver</button>
   <div style="display:flex;justify-content:space-between;align-items:center">
     <span id="clt" style="font-size:15px;font-weight:700;color:var(--black)"></span>
     <span id="clp" style="font-size:12px;color:var(--muted)"></span>
@@ -555,6 +557,8 @@ textarea{min-height:74px;resize:vertical}
   </select>
   <label class="fl">Fecha</label><input type="date" id="ext-fecha">
   <label class="fl">Hora inicio</label><input type="time" id="ext-hora">
+  <label class="fl">Notas / contexto (opcional)</label>
+  <textarea id="ext-notas" placeholder="Contexto de la inspección, motivo, antecedentes..." style="min-height:60px"></textarea>
   <button class="btn btn-orange" style="margin-top:16px" onclick="iExt()"><i class="ti ti-fire-extinguisher"></i> Iniciar inspección</button>
   <button class="btn btn-sec" onclick="gt('s-cl-menu')">Cancelar</button>
 </div>
@@ -597,26 +601,8 @@ textarea{min-height:74px;resize:vertical}
   <input type="text" id="ef-serie" placeholder="N° de serie del cilindro">
   <label class="fl">Peso (kg)</label>
   <input type="number" id="ef-peso" placeholder="Peso en kg" step="0.5">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-    <div>
-      <label class="fl">Última recarga — Mes</label>
-      <select id="ef-rec-mes">
-        <option value="">Mes</option>
-        <option>Enero</option><option>Febrero</option><option>Marzo</option>
-        <option>Abril</option><option>Mayo</option><option>Junio</option>
-        <option>Julio</option><option>Agosto</option><option>Septiembre</option>
-        <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
-      </select>
-    </div>
-    <div>
-      <label class="fl">Año</label>
-      <input type="number" id="ef-rec-ano" placeholder="Año" min="2015" max="2035">
-    </div>
-  </div>
-  <label class="fl">Próxima mantención</label>
-  <input type="date" id="ef-prox-mant">
-  <label class="fl">Próxima recarga</label>
-  <input type="date" id="ef-prox-rec">
+  <label class="fl">Próxima recarga / mantención</label>
+  <input type="date" id="ef-prox">
   <div class="sec-div" style="margin-top:16px">Condiciones del extintor</div>
   <div id="ext-conds"></div>
   <label class="fl" style="margin-top:12px">Observación de este extintor</label>
@@ -925,6 +911,7 @@ function gt(id){
   if(id==='s-hist-inf')rHI();
   if(id==='s-config-alertas')rConfigAlertas();
   if(id==='s-ins-init'){document.getElementById('ins-fecha').value=hoy();document.getElementById('ins-hora').value=hora();}
+  if(id==='s-cl-menu')rClMenu();
   if(id==='s-obs-init'){
     document.getElementById('obs-fecha').value=hoy();document.getElementById('obs-hora').value=hora();
     otp='';ofd=null;document.getElementById('ofl').textContent='Adjuntar foto (opcional)';
@@ -1120,12 +1107,32 @@ function editarUsuario(uid){
   });
 }
 
+function compressFirma(file,cb){
+  const r=new FileReader();
+  r.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.width,h=img.height,M=900;
+      if(w>M){h=Math.round(h*M/w);w=M;}
+      if(h>M){w=Math.round(w*M/h);h=M;}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      const ctx=cv.getContext('2d');
+      // NO se rellena fondo — se preserva la transparencia (canal alfa) del PNG original
+      ctx.drawImage(img,0,0,w,h);
+      const d=cv.toDataURL('image/png');
+      cb(d);
+    };
+    img.src=ev.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
 function cFirmaNuevo(inp){
-  if(inp.files&&inp.files[0]) compress(inp.files[0],(d)=>{firmaNuevoData=d;document.getElementById('pav-nuevo').innerHTML=`<img src="${d}" style="padding:4px;width:100%;height:100%;object-fit:contain">`;document.getElementById('fs-nuevo').textContent='Firma cargada';});
+  if(inp.files&&inp.files[0]) compressFirma(inp.files[0],(d)=>{firmaNuevoData=d;document.getElementById('pav-nuevo').innerHTML=`<img src="${d}" style="padding:4px;width:100%;height:100%;object-fit:contain">`;document.getElementById('fs-nuevo').textContent='Firma cargada';});
 }
 
 function cFirmaEditar(inp){
-  if(inp.files&&inp.files[0]) compress(inp.files[0],(d)=>{firmaEditarData=d;document.getElementById('pav-editar').innerHTML=`<img src="${d}" style="padding:4px;width:100%;height:100%;object-fit:contain">`;document.getElementById('fs-editar').textContent='Firma actualizada';});
+  if(inp.files&&inp.files[0]) compressFirma(inp.files[0],(d)=>{firmaEditarData=d;document.getElementById('pav-editar').innerHTML=`<img src="${d}" style="padding:4px;width:100%;height:100%;object-fit:contain">`;document.getElementById('fs-editar').textContent='Firma actualizada';});
 }
 
 function guardarUsuarioNuevo(){
@@ -1202,12 +1209,15 @@ function sFAI(inp){if(inp.files&&inp.files[0]) compress(inp.files[0],(d,o,c)=>{a
 // INSPECCION
 function iIns(){
   if(!usuarioActivo){alert('Configura tu perfil primero');gt('s-usuarios');return;}
+  if(!pendingCL){alert('Selecciona primero un checklist');gt('s-cl-menu');return;}
   const f=document.getElementById('ins-fecha').value,h=document.getElementById('ins-hora').value;
   const a=document.getElementById('ins-area').value,t=document.getElementById('ins-turno').value;
   const rs=document.getElementById('ins-rs').value,sec=document.getElementById('ins-seccion').value;
+  const notas=document.getElementById('ins-notas').value;
   if(!f||!a){alert('Completa fecha y área');return;}
-  cI={f,h,a,t,rs,sec,rs_vals:{},ncs:[],items:[],clKey:''};
-  rClMenu(a);gt('s-cl-menu');
+  cI={f,h,a,t,rs,sec,notas,rs_vals:{},ncs:[],items:[],clKey:pendingCL.key};
+  rCL2(pendingCL);
+  gt('s-cl');
 }
 
 // ── CATÁLOGO DE CHECKLISTS ─────────────────────────────────────
@@ -1488,10 +1498,30 @@ const CLS={
 };
 
 // ── MENÚ DE SELECCIÓN DE CHECKLIST ────────────────────────────
-function rClMenu(area){
+const CAT_ICONS={
+  'Infraestructura y emergencia':'ti-building-warehouse',
+  'Bienestar':'ti-coffee',
+  'Sustancias y residuos peligrosos':'ti-flask',
+  'EPP por tipo de trabajo':'ti-shield-check',
+  'Equipos y vehículos':'ti-truck',
+  'Herramientas':'ti-tool',
+  'Gestión':'ti-folder'
+};
+
+function rClMenu(){
   let html='';
-  CL_CAT.forEach(grp=>{
-    html+=`<div class="cl-group-title">${grp.grupo}</div>`;
+  CL_CAT.forEach((grp,gi)=>{
+    const total=grp.checks.length+(grp.grupo==='Infraestructura y emergencia'?1:0);
+    const icon=CAT_ICONS[grp.grupo]||'ti-clipboard-list';
+    html+=`<div class="cl-card" onclick="togCat(${gi})" style="margin-bottom:6px">
+      <div class="icon-box" style="background:#FEF0E8;width:40px;height:40px;border-radius:10px;flex-shrink:0"><i class="ti ${icon}" style="color:var(--orange);font-size:21px"></i></div>
+      <div class="cl-card-info">
+        <div class="cl-card-title">${grp.grupo}</div>
+        <div class="cl-card-sub">${total} checklist${total!==1?'s':''}</div>
+      </div>
+      <i class="ti ti-chevron-down" id="catchev${gi}" style="color:var(--muted);font-size:16px;transition:transform .2s"></i>
+    </div>
+    <div id="catbody${gi}" style="display:none;padding-left:8px;margin-bottom:8px">`;
     grp.checks.forEach(ck=>{
       html+=`<div class="cl-card" onclick="selCL('${ck.key}')">
         <span class="cl-card-code">${ck.code}</span>
@@ -1502,7 +1532,6 @@ function rClMenu(area){
         <i class="ti ti-chevron-right" style="color:var(--muted);font-size:16px"></i>
       </div>`;
     });
-    // 001B — ahora funcional
     if(grp.grupo==='Infraestructura y emergencia'){
       html+=`<div class="cl-card" onclick="gt('s-ext-init')">
         <span class="cl-card-code">SSO-CL-001B</span>
@@ -1513,18 +1542,29 @@ function rClMenu(area){
         <i class="ti ti-chevron-right" style="color:var(--muted);font-size:16px"></i>
       </div>`;
     }
+    html+=`</div>`;
   });
   document.getElementById('cl-menu-body').innerHTML=html;
 }
 
+function togCat(gi){
+  const body=document.getElementById('catbody'+gi);
+  const chev=document.getElementById('catchev'+gi);
+  const open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  chev.style.transform=open?'rotate(180deg)':'';
+}
+
+let pendingCL=null;
 function selCL(key){
   // Buscar el checklist en el catálogo
   let found=null;
   CL_CAT.forEach(grp=>grp.checks.forEach(ck=>{if(ck.key===key)found=ck;}));
   if(!found)return;
-  cI.clKey=key;
-  rCL2(found);
-  gt('s-cl');
+  pendingCL=found;
+  document.getElementById('ins-init-title').textContent=found.code+' — '+found.title;
+  document.getElementById('ins-init-sub').textContent='Completa los datos para iniciar la inspección';
+  gt('s-ins-init');
 }
 
 // ── RENDER CHECKLIST APLICA/CUMPLE ────────────────────────────
@@ -1555,10 +1595,18 @@ function rCL2(ck){
             </div>
           </div>
         </div>
-        <button class="btn-sm" style="padding:7px 9px;flex-shrink:0;margin-bottom:0" onclick="tObsItem(${x})" id="obsbtn${x}" title="Observación"><i class="ti ti-note" style="font-size:14px"></i></button>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          <button class="btn-sm" style="padding:6px 8px;margin-bottom:0" onclick="tObsItem(${x})" id="obsbtn${x}" title="Observación"><i class="ti ti-note" style="font-size:13px"></i></button>
+          <button class="btn-sm" style="padding:6px 8px;margin-bottom:0" onclick="tFotoItem(${x})" id="fotobtn${x}" title="Foto"><i class="ti ti-camera" style="font-size:13px"></i></button>
+        </div>
       </div>
       <div id="obsfield${x}" style="display:none;margin-top:4px">
         <textarea id="obstxt${x}" placeholder="Observación para este ítem..." style="min-height:52px;margin-bottom:0;font-size:13px" oninput="cI.items[${x}].obs=this.value"></textarea>
+      </div>
+      <div id="fotofield${x}" style="display:none;margin-top:4px">
+        <input type="file" id="fotoinput${x}" accept="image/*" capture="environment" style="display:none" onchange="onFotoItem(${x},this)">
+        <button class="btn-sm" style="width:100%" onclick="document.getElementById('fotoinput${x}').click()"><i class="ti ti-camera"></i> Tomar / seleccionar foto</button>
+        <div id="fotoprev${x}"></div>
       </div>`;
       html+=`</div>`;
       idx++;
@@ -1610,6 +1658,24 @@ function sAC(idx,tipo,val,btn){
   }
   cI.rs_vals[idx]=(it.aplica==='N')?'NA':(it.cumple==='S'?'OK':(it.cumple==='N'?'NC':'-'));
   uP2();
+}
+
+function tFotoItem(idx){
+  const f=document.getElementById('fotofield'+idx);
+  const b=document.getElementById('fotobtn'+idx);
+  const open=f.style.display==='none';
+  f.style.display=open?'block':'none';
+  if(open){b.style.background='#E8F0FB';b.style.borderColor='#1A3A6B';b.style.color='#1A3A6B';}
+}
+
+function onFotoItem(idx,inp){
+  if(!inp.files||!inp.files[0])return;
+  compress(inp.files[0],(d)=>{
+    cI.items[idx].foto=d;
+    document.getElementById('fotoprev'+idx).innerHTML='<img src="'+d+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-top:6px;border:1px solid var(--border)">';
+    const b=document.getElementById('fotobtn'+idx);
+    b.style.background='#E8F0FB';b.style.borderColor='#1A3A6B';b.style.color='#1A3A6B';
+  });
 }
 
 function tObsItem(idx){
@@ -1750,10 +1816,11 @@ function bRI(){
     aplica:x.aplica||null,
     cumple:x.cumple||null,
     critico:x.critico||false,
-    obs:x.obs||''
+    obs:x.obs||'',
+    foto:x.foto||null
   }));
   const clKey=cI.clKey||'';
-  return {tipo:'Inspeccion',folio:cnt('Inspeccion'),fecha:cI.f,hora:cI.h,area:cI.a,seccion:cI.sec,turno:cI.t,razonSocial:cI.rs,inspector:usuarioActivo?usuarioActivo.nombre:'',cargo:usuarioActivo?usuarioActivo.cargo:'',registro:usuarioActivo?usuarioActivo.registro:'',resumen:`OK:${ok} NC:${nc} NA:${na}`,estadoMedida:nc>0?'Pendiente':'Cerrada',fechaCierre:'',tsVerif:'',fotoVerif:null,ts:Date.now(),clKey,clItems,ncs:cI.ncs.map(n=>({item:n.it||n.d||'',cat:n.cat,n:n.n||'',critico:n.critico||false,riesgo:n.riesgo,riesgoColor:n.rc,respEjec:n.re,encargado:n.enc,cargo:n.cargo,plazo:n.plazo,comentario:n.com,foto:n.foto,estado:n.estado,fotoVerif:null,tsVerif:''})),obs:document.getElementById('og').value};
+  return {tipo:'Inspeccion',folio:cnt('Inspeccion'),fecha:cI.f,hora:cI.h,area:cI.a,seccion:cI.sec,turno:cI.t,razonSocial:cI.rs,notasIni:cI.notas||'',inspector:usuarioActivo?usuarioActivo.nombre:'',cargo:usuarioActivo?usuarioActivo.cargo:'',registro:usuarioActivo?usuarioActivo.registro:'',resumen:`OK:${ok} NC:${nc} NA:${na}`,estadoMedida:nc>0?'Pendiente':'Cerrada',fechaCierre:'',tsVerif:'',fotoVerif:null,ts:Date.now(),clKey,clItems,ncs:cI.ncs.map(n=>({item:n.it||n.d||'',cat:n.cat,n:n.n||'',critico:n.critico||false,riesgo:n.riesgo,riesgoColor:n.rc,respEjec:n.re,encargado:n.enc,cargo:n.cargo,plazo:n.plazo,comentario:n.com,foto:n.foto,estado:n.estado,fotoVerif:null,tsVerif:''})),obs:document.getElementById('og').value};
 }
 
 let ultimoRegistro=null, ultimoTipoPDF=null;
@@ -1782,8 +1849,8 @@ function enviarUltimoPorCorreo(){
   gt('s-home');
 }
 
-function gSI(){const r=bRI();db.push(r);sv();eS(r);gt('s-home');}
-function eInf(){const r=bRI();db.push(r);sv();eS(r);gPDF('inspeccion',r);mostrarInformeListo('inspeccion',r);}
+function gSI(){if(extMode){extMode=false;const r=bRExt(cI.ncs);db.push(r);sv();eS(r);gt('s-home');return;}const r=bRI();db.push(r);sv();eS(r);gt('s-home');}
+function eInf(){if(extMode){extMode=false;const r=bRExt(cI.ncs);db.push(r);sv();eS(r);gPDF('extintores',r);mostrarInformeListo('extintores',r);return;}const r=bRI();db.push(r);sv();eS(r);gPDF('inspeccion',r);mostrarInformeListo('inspeccion',r);}
 
 // FINALIZAR OBSERVACION
 function fObs(sinPDF){
@@ -1995,7 +2062,7 @@ function rHI(){
 }
 
 function elInf(ri){db.splice(ri,1);sv();rHI();rH();}
-function rPDF(ri){const r=db[ri];if(!r)return;const t=r.tipo==='Inspeccion'?'inspeccion':r.tipo==='Observacion'?'observacion':r.tipo==='CondicionInsegura'?'ci':'ai';gPDF(t,r);}
+function rPDF(ri){const r=db[ri];if(!r)return;const t=r.tipo==='Caminata'?'caminata':(r.tipo==='Inspeccion'?(r.clKey==='001B'?'extintores':'inspeccion'):r.tipo==='Observacion'?'observacion':r.tipo==='CondicionInsegura'?'ci':'ai');gPDF(t,r);}
 
 // SHEETS
 let previewRi=null;
@@ -2005,7 +2072,7 @@ function verInforme(ri,origen){
   previewOrigen=origen||'s-hist-inf';
   const r=db[ri];if(!r)return;
   previewRi=ri;
-  const cfg={Inspeccion:['#E6F1FB','#0C447C','Inspección'],Observacion:['var(--green-bg)','var(--green)','Observación'],CondicionInsegura:['var(--red-bg)','var(--red)','Condición insegura'],AccionInsegura:['var(--orange-bg)','var(--orange)','Acción insegura']};
+  const cfg={Inspeccion:['#E6F1FB','#0C447C','Inspección'],Observacion:['var(--green-bg)','var(--green)','Observación'],CondicionInsegura:['var(--red-bg)','var(--red)','Condición insegura'],AccionInsegura:['var(--orange-bg)','var(--orange)','Acción insegura'],Caminata:['#E8F0FB','#0F4C81','Caminata']};
   const[bg,col,lb]=cfg[r.tipo]||['#F1EFE8','#444','Registro'];
   let html=`<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;flex-wrap:wrap">
     <span class="badge" style="background:${bg};color:${col}">${lb}</span>
@@ -2254,6 +2321,7 @@ function construirDocPDF(tipo,d){
     const cl=d.clItems||[];
     const ok=cl.filter(x=>x.resp==='OK').length,nc=cl.filter(x=>x.resp==='NC').length,na=cl.filter(x=>x.resp==='NA').length,tot=cl.length;
     const pct=tot>0?Math.round((ok/tot)*100):0;
+    if(d.notasIni)aT('Notas de contexto',d.notasIni);
     y+=3;aS('RESUMEN DEL CHECKLIST');
     aF('Total items',tot);aF('Conformes OK',ok+' ('+pct+'%)');aF('No conformes NC',nc);aF('No aplica NA',na);
     y+=3;aS('DETALLE DEL CHECKLIST');
@@ -2262,10 +2330,13 @@ function construirDocPDF(tipo,d){
       if(x.cat!==ca){ca=x.cat;if(y>260){doc.addPage();y=15;}doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(232,80,10);doc.text(san(x.cat).toUpperCase(),M,y);y+=4.5;}
       if(y>260){doc.addPage();y=15;}
       doc.setFont('helvetica','normal');doc.setTextColor(26,26,26);doc.setFontSize(7.5);
-      doc.text('— '+san(x.item),M+3,y);
+      doc.text('— '+san(x.item).substring(0,90),M+3,y);
+      const lbl=x.resp==='OK'?'CUMPLE':(x.resp==='NC'?'NO CUMPLE':(x.resp==='NA'?'N/A':x.resp||'-'));
       const rc=x.resp==='OK'?[39,80,10]:x.resp==='NC'?[192,36,26]:[12,68,165];
-      doc.setTextColor(...rc);doc.setFont('helvetica','bold');doc.text(x.resp||'-',W-M,y,{align:'right'});
+      doc.setTextColor(...rc);doc.setFont('helvetica','bold');doc.text(lbl,W-M,y,{align:'right'});
       doc.setTextColor(26,26,26);doc.setFont('helvetica','normal');y+=4.5;
+      if(x.obs){if(y>260){doc.addPage();y=15;}doc.setFontSize(7);doc.setTextColor(80,80,80);doc.text('Obs: '+san(x.obs).substring(0,100),M+5,y);doc.setTextColor(26,26,26);y+=4;}
+      if(x.foto){if(y+40>260){doc.addPage();y=15;}try{doc.addImage(x.foto,'JPEG',M+5,y,55,40);y+=44;}catch(e){}}
     });
     if(d.obs){y+=3;aS('OBSERVACIONES GENERALES');aT('',d.obs);}
     const ns=d.ncs||[];
@@ -2317,6 +2388,7 @@ function construirDocPDF(tipo,d){
       doc.text(rsp,W-M,y,{align:'right'});
       doc.setTextColor(26,26,26);doc.setFont('helvetica','normal');y+=4.5;
       if(x.obs){if(y>260){doc.addPage();y=15;}doc.setFontSize(7);doc.setTextColor(80,80,80);doc.text('Obs: '+san(x.obs),M+4,y);doc.setTextColor(26,26,26);y+=4;}
+      if(x.foto){if(y+40>260){doc.addPage();y=15;}try{doc.addImage(x.foto,'JPEG',M+4,y,55,40);y+=44;}catch(e){}}
     });
   }
   if(tipo==='extintores'){
@@ -2328,7 +2400,7 @@ function construirDocPDF(tipo,d){
       ck(12);
       doc.setFillColor(26,26,26);doc.rect(M,y-3,W-M*2,8,'F');
       doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(255,255,255);
-      doc.text('EXTINTOR '+(ei+1)+(e.num?' — '+san(e.num):''),M+3,y+1.5);
+      doc.text('EXTINTOR'+(e.num?' — '+san(e.num):' '+(ei+1)),M+3,y+1.5);
       doc.setTextColor(232,80,10);
       const ncs=Object.values(e.conds||{}).filter(v=>v==='NO').length;
       doc.text(ncs>0?ncs+' NC':'Conforme',W-M-2,y+1.5,{align:'right'});
@@ -2337,9 +2409,8 @@ function construirDocPDF(tipo,d){
       if(e.tipo)aF('Tipo de agente',e.tipo);
       if(e.serie)aF('N° de serie',e.serie);
       if(e.peso)aF('Peso (kg)',e.peso);
-      if(e.recMes||e.recAno)aF('Última recarga',san((e.recMes||'')+' '+(e.recAno||'')).trim());
-      if(e.proxMant)aF('Próxima mantención',e.proxMant);
-      if(e.proxRec)aF('Próxima recarga',e.proxRec);
+      const pr=e.prox||e.proxRec||e.proxMant;
+      if(pr)aF('Próxima recarga / mantención',pr);
       ck(8);
       doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(100,100,100);
       doc.text('CONDICIONES INSPECCIONADAS:',M,y);y+=5;
@@ -2358,7 +2429,28 @@ function construirDocPDF(tipo,d){
       if(e.obs){ck(6);doc.setFontSize(7);doc.setTextColor(80,80,80);doc.text('Obs: '+san(e.obs),M+3,y);doc.setTextColor(26,26,26);y+=4.5;}
       y+=3;
     });
+    if(d.notasIni)aT('Notas de contexto',d.notasIni);
     if(d.obs)aT('Observaciones generales',d.obs);
+    const nsx=d.ncs||[];
+    if(nsx.length){
+      y+=3;aS('NO CONFORMIDADES DE ESTA INSPECCION');
+      nsx.forEach((n,i)=>{
+        if(y>250){doc.addPage();y=15;}
+        const nrgb=n.riesgo==='Tolerable'?[234,243,222]:n.riesgo==='Moderado'?[250,238,218]:n.riesgo==='Importante'?[250,236,231]:[252,235,235];
+        doc.setFillColor(...nrgb);doc.rect(M,y-3,W-M*2,9,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...(n.riesgo==='Tolerable'?[39,80,10]:n.riesgo==='Moderado'?[99,56,6]:n.riesgo==='Importante'?[113,43,19]:[192,36,26]));
+        const ntxt=san('NC '+(i+1)+': '+(n.item||''));
+        doc.text(ntxt.substring(0,95),M+2,y+3);y+=11;
+        aF('  Nivel de riesgo',n.riesgo||'No asignado');
+        aF('  Resp. ejecucion',n.respEjec||'-');
+        aF('  Encargado seguimiento',n.encargado||'-');
+        aF('  Plazo',n.plazo||'-');
+        aF('  Estado',n.estado||'Pendiente');
+        if(n.comentario)aT('  Comentario',n.comentario);
+        if(n.foto){if(y+40>260){doc.addPage();y=15;}try{doc.addImage(n.foto,'JPEG',M+3,y,55,40);y+=44;}catch(e){}}
+        y+=3;
+      });
+    }
   }
 
   if(tipo==='observacion'){
@@ -2407,7 +2499,7 @@ function construirDocPDF(tipo,d){
   // PIE — coordenadas absolutas fijas desde el fondo de la página
   // Se dibuja en la última página con posición fija independiente del contenido
   const PH = 297; // altura A4 en mm
-  const firmaAreaTop = PH - 37; // reservar 37mm desde el fondo
+  const firmaAreaTop = PH - 33; // zona de firma desde el fondo
   const firma = usr.firma || null;
   const pageW = doc.internal.pageSize.getWidth();
   const cx = pageW / 2;
@@ -2416,20 +2508,10 @@ function construirDocPDF(tipo,d){
   doc.setFillColor(232,80,10);
   doc.rect(0, firmaAreaTop, W, 1.5, 'F');
 
-  // Imagen de firma centrada — posición absoluta
-  const firmaW = 42, firmaH = 16;
-  const firmaY = firmaAreaTop + 2;
-  if(firma){
-    try{ doc.addImage(firma,'JPEG', cx-(firmaW/2), firmaY, firmaW, firmaH); }
-    catch(e){ try{ doc.addImage(firma,'PNG', cx-(firmaW/2), firmaY, firmaW, firmaH); }catch(e2){} }
-  }
-
-  // Línea separadora debajo de la firma
-  const lineY = firmaAreaTop + (firma ? firmaH + 4 : 4);
+  // Línea de firma y textos en posiciones fijas (la imagen irá ENCIMA, superpuesta)
+  const lineY = firmaAreaTop + 14;
   doc.setDrawColor(180,180,180);
   doc.line(cx-35, lineY, cx+35, lineY);
-
-  // Nombre, cargo, registro — posiciones absolutas descendentes
   let ty = lineY + 4;
   doc.setFontSize(8.5); doc.setTextColor(26,26,26); doc.setFont('helvetica','bold');
   doc.text(san(usr.nombre||d.inspector||''), cx, ty, {align:'center'}); ty += 4.5;
@@ -2441,6 +2523,15 @@ function construirDocPDF(tipo,d){
   }
   doc.setFontSize(6.5); doc.setTextColor(160,160,160);
   doc.text('Emitido el '+em+' — Aerovias DAP', W-M, PH-2, {align:'right'});
+
+  // Imagen de firma AL FINAL — se dibuja encima de la línea y el nombre,
+  // como una firma real estampada "delante del texto"
+  if(firma){
+    const firmaW = 46, firmaH = 20;
+    const firmaY = lineY - firmaH + 6; // cruza la línea y roza el nombre
+    try{ doc.addImage(firma,'PNG', cx-(firmaW/2), firmaY, firmaW, firmaH); }
+    catch(e){ try{ doc.addImage(firma,'JPEG', cx-(firmaW/2), firmaY, firmaW, firmaH); }catch(e2){} }
+  }
 
   return doc;
 }
@@ -2547,10 +2638,7 @@ function rExtList(){
 function abrirFrmExt(){
   extEditIdx=null;
   document.getElementById('ext-frm-title').textContent='Nuevo extintor';
-  ['ef-num','ef-ubic','ef-serie','ef-obs'].forEach(id=>document.getElementById(id).value='');
-  ['ef-peso','ef-rec-ano'].forEach(id=>document.getElementById(id).value='');
-  ['ef-tipo','ef-rec-mes'].forEach(id=>document.getElementById(id).value='');
-  ['ef-prox-mant','ef-prox-rec'].forEach(id=>document.getElementById(id).value='');
+  ['ef-num','ef-ubic','ef-serie','ef-obs','ef-peso','ef-tipo','ef-prox'].forEach(id=>document.getElementById(id).value='');
   rCondsFrm({});
   gt('s-ext-frm');
 }
@@ -2564,10 +2652,7 @@ function editarExt(idx){
   document.getElementById('ef-tipo').value=e.tipo||'';
   document.getElementById('ef-serie').value=e.serie||'';
   document.getElementById('ef-peso').value=e.peso||'';
-  document.getElementById('ef-rec-mes').value=e.recMes||'';
-  document.getElementById('ef-rec-ano').value=e.recAno||'';
-  document.getElementById('ef-prox-mant').value=e.proxMant||'';
-  document.getElementById('ef-prox-rec').value=e.proxRec||'';
+  document.getElementById('ef-prox').value=e.prox||e.proxRec||e.proxMant||'';
   document.getElementById('ef-obs').value=e.obs||'';
   rCondsFrm(e.conds||{});
   gt('s-ext-frm');
@@ -2612,10 +2697,7 @@ function guardarExt(){
     tipo:document.getElementById('ef-tipo').value,
     serie:document.getElementById('ef-serie').value.trim(),
     peso:document.getElementById('ef-peso').value,
-    recMes:document.getElementById('ef-rec-mes').value,
-    recAno:document.getElementById('ef-rec-ano').value,
-    proxMant:document.getElementById('ef-prox-mant').value,
-    proxRec:document.getElementById('ef-prox-rec').value,
+    prox:document.getElementById('ef-prox').value,
     obs:document.getElementById('ef-obs').value.trim(),
     conds:Object.assign({},window._extConds||{})
   };
@@ -2626,28 +2708,59 @@ function guardarExt(){
   gt('s-ext-cl');
 }
 
+let extMode=false;
+let extDatos=null;
+
+function buildExtNCs(){
+  const arr=[];
+  extList.forEach((e,i)=>{
+    const fails=EXT_CONDS.filter(c=>e.conds[c.id]==='NO');
+    if(fails.length){
+      arr.push({idx:'ext'+i,
+        it:(e.num||'Extintor '+(i+1))+(e.ubic?' ('+e.ubic+')':'')+': '+fails.map(f=>f.label).join('; '),
+        cat:'SSO-CL-001B Extintores',n:String(i+1),
+        critico:fails.some(f=>f.critico),
+        riesgo:'',rc:'',re:'',enc:'',cargo:'',plazo:'',com:'',foto:null,
+        estado:'Pendiente',fotoVerif:null,tsVerif:''});
+    }
+  });
+  return arr;
+}
+
+function bRExt(ncsArr){
+  const totNC=(ncsArr||[]).length;
+  return {
+    tipo:'Inspeccion',clKey:'001B',folio:cnt('Inspeccion'),
+    fecha:extDatos.fecha,hora:extDatos.hora,area:extDatos.area,razonSocial:extDatos.rs,
+    inspector:usuarioActivo.nombre,cargo:usuarioActivo.cargo||'',registro:usuarioActivo.registro||'',
+    extList:extDatos.extList,notasIni:extDatos.notas,obs:extDatos.obs,
+    resumen:'SSO-CL-001B — '+extDatos.extList.length+' extintores — '+totNC+' NC',
+    estadoMedida:totNC>0?'Pendiente':'Cerrada',fechaCierre:'',tsVerif:'',fotoVerif:null,ts:Date.now(),
+    ncs:(ncsArr||[]).map(n=>({item:n.it,cat:n.cat,n:n.n,critico:n.critico||false,riesgo:n.riesgo,riesgoColor:n.rc,respEjec:n.re,encargado:n.enc,cargo:n.cargo,plazo:n.plazo,comentario:n.com,foto:n.foto,estado:n.estado||'Pendiente',fotoVerif:null,tsVerif:''}))
+  };
+}
+
 function fExt(sinPDF){
   if(!usuarioActivo){alert('Configura tu perfil');return;}
   if(extList.length===0){alert('Agrega al menos un extintor antes de guardar');return;}
-  const ncs=extList.reduce((acc,e)=>acc+EXT_CONDS.filter(c=>e.conds[c.id]==='NO').length,0);
-  const r={
-    tipo:'Inspeccion',
-    clKey:'001B',
-    folio:cnt('Inspeccion'),
+  extDatos={
     fecha:document.getElementById('ext-fecha').value,
     hora:document.getElementById('ext-hora').value,
     area:document.getElementById('ext-area').value,
-    razonSocial:document.getElementById('ext-rs').value,
-    inspector:usuarioActivo.nombre,
-    cargo:usuarioActivo.cargo||'',
-    registro:usuarioActivo.registro||'',
-    extList:extList.map(e=>({...e})),
+    rs:document.getElementById('ext-rs').value,
+    notas:document.getElementById('ext-notas').value,
     obs:document.getElementById('ext-obs').value,
-    resumen:'SSO-CL-001B — '+extList.length+' extintores — '+ncs+' NC',
-    estadoMedida:ncs>0?'Pendiente':'Cerrada',
-    fechaCierre:'',tsVerif:'',fotoVerif:null,
-    ts:Date.now()
+    extList:extList.map(e=>({...e}))
   };
+  const ncsArr=buildExtNCs();
+  if(ncsArr.length>0&&!sinPDF){
+    // Flujo de asignación de NC igual que los demás checklists
+    extMode=true;
+    cI={ncs:ncsArr,items:[],rs_vals:{}};
+    rNL();gt('s-nc');
+    return;
+  }
+  const r=bRExt(ncsArr);
   db.push(r);sv();eS(r);
   if(sinPDF){gt('s-home');return;}
   gPDF('extintores',r);
@@ -2707,8 +2820,17 @@ function iCam() {
     html += '<button class="ct" id="cc' + x + 's" onclick="sCAC(' + x + ',`c`,`S`,this)" disabled>SI</button>';
     html += '<button class="ct" id="cc' + x + 'n" onclick="sCAC(' + x + ',`c`,`N`,this)" disabled>NO</button>';
     html += '</div></div></div>';
+    html += '<div style="display:flex;gap:6px;margin-top:6px">';
+    html += '<button class="btn-sm" style="flex:1" onclick="tCamObs(' + x + ')" id="camobsbtn' + x + '"><i class="ti ti-note"></i> Obs</button>';
+    html += '<button class="btn-sm" style="flex:1" onclick="tCamFoto(' + x + ')" id="camfotobtn' + x + '"><i class="ti ti-camera"></i> Foto</button>';
+    html += '</div>';
     html += '<div id="camobs' + x + '" style="display:none;margin-top:3px">';
     html += '<textarea placeholder="Observacion..." style="min-height:48px;margin-bottom:0;font-size:13px" oninput="camItems[' + x + '].obs=this.value"></textarea>';
+    html += '</div>';
+    html += '<div id="camfoto' + x + '" style="display:none;margin-top:3px">';
+    html += '<input type="file" id="camfi' + x + '" accept="image/*" capture="environment" style="display:none" onchange="onCamFoto(' + x + ',this)">';
+    html += '<button class="btn-sm" style="width:100%" onclick="document.getElementById(`camfi' + x + '`).click()"><i class="ti ti-camera"></i> Tomar / seleccionar foto</button>';
+    html += '<div id="camfp' + x + '"></div>';
     html += '</div></div>';
   });
   document.getElementById('camb').innerHTML = html;
@@ -2736,6 +2858,23 @@ function sCAC(idx, tipo, val, btn) {
   uCam();
 }
 
+
+function tCamObs(idx){
+  const f=document.getElementById('camobs'+idx);
+  f.style.display=f.style.display==='none'?'block':'none';
+}
+function tCamFoto(idx){
+  const f=document.getElementById('camfoto'+idx);
+  f.style.display=f.style.display==='none'?'block':'none';
+}
+function onCamFoto(idx,inp){
+  if(!inp.files||!inp.files[0])return;
+  compress(inp.files[0],function(d){
+    camItems[idx].foto=d;
+    document.getElementById('camfp'+idx).innerHTML='<img src="'+d+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-top:6px;border:1px solid var(--border)">';
+  });
+}
+
 function uCam() {
   const tot = camItems.length;
   const done = camItems.filter(it => it.aplica !== null && (it.aplica === 'N' || it.cumple !== null)).length;
@@ -2758,7 +2897,7 @@ function fCam(sinPDF) {
     inspector: usuarioActivo.nombre,
     cargo: usuarioActivo.cargo || '',
     registro: usuarioActivo.registro || '',
-    camItems: camItems.map(it => ({n:it.n, sub:it.sub, d:it.d, aplica:it.aplica, cumple:it.cumple, critico:it.critico||false, obs:it.obs})),
+    camItems: camItems.map(it => ({n:it.n, sub:it.sub, d:it.d, aplica:it.aplica, cumple:it.cumple, critico:it.critico||false, obs:it.obs, foto:it.foto||null})),
     obs: document.getElementById('cam-obs').value,
     resumen: 'Caminata SSO-REC-001 - ' + ncs + ' hallazgos',
     estadoMedida: ncs > 0 ? 'Pendiente' : 'Cerrada',
