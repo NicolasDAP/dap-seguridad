@@ -2329,6 +2329,7 @@ function rHI(){
         <div style="display:flex;gap:5px;flex-shrink:0">
           <button class="btn-sm" onclick="verInforme(${ri},'s-hist-inf')"><i class="ti ti-eye"></i> Ver</button>
           <button class="btn-sm" onclick="rPDF(${ri})"><i class="ti ti-download"></i> PDF</button>
+          <button class="btn-sm" onclick="reenviarASheet(${ri},this)"><i class="ti ti-refresh"></i> Actualizar</button>
           <button class="btn-sm" onclick="enviarInformePorCorreo(${ri})"><i class="ti ti-mail"></i></button>
           <button class="btn-sm-danger" onclick="tCB('di${ri}')"><i class="ti ti-trash"></i></button>
         </div>
@@ -2443,6 +2444,20 @@ async function eS(r){
     await fetch(SHEETS_URL,{method:'POST',body:JSON.stringify(r),headers:{'Content-Type':'application/json'},mode:'no-cors'});
     d.className='sdot';t.textContent='Sincronizado';
   }catch(e){d.className='sdot err';t.textContent='Sin conexión — guardado local';}
+}
+
+// Reenvía manualmente un registro ya guardado a Google Sheets (por si el envío
+// original fallara en silencio, o hubo cambios que no llegaron). El Apps Script
+// actualiza la fila existente si la encuentra por folio, o la crea si no existe.
+async function reenviarASheet(ri, btnEl){
+  const r=db[ri];
+  if(!r) return;
+  const original=btnEl.innerHTML;
+  btnEl.innerHTML='<i class="ti ti-loader-2"></i> Enviando...';
+  btnEl.disabled=true;
+  await eS(r);
+  btnEl.innerHTML='<i class="ti ti-check"></i> Enviado';
+  setTimeout(()=>{btnEl.innerHTML=original;btnEl.disabled=false;},2500);
 }
 
 // === CONFIGURACION DE ALERTAS (panel admin) ===
@@ -2597,6 +2612,20 @@ function construirDocPDF(tipo,d){
     if(y+h>260){doc.addPage();y=15;}
     try{doc.addImage(src,'JPEG',M,y,80,h);y+=h+4;}catch(e){}
   };
+  // Varias fotos de un mismo punto, acomodadas de a 2 por fila (usa el ancho
+  // disponible en vez de apilar hacia abajo — evita informes innecesariamente largos).
+  const aImgRow=(fotos,h=55)=>{
+    if(!fotos||!fotos.length)return;
+    const gap=6, imgW=(W-M*2-gap)/2;
+    for(let i=0;i<fotos.length;i+=2){
+      if(y+h>260){doc.addPage();y=15;}
+      try{doc.addImage(fotos[i],'JPEG',M,y,imgW,h);}catch(e){}
+      if(fotos[i+1]){
+        try{doc.addImage(fotos[i+1],'JPEG',M+imgW+gap,y,imgW,h);}catch(e){}
+      }
+      y+=h+4;
+    }
+  };
 
   aS('DATOS GENERALES');
   aF('Folio',d.folio);
@@ -2683,13 +2712,13 @@ function construirDocPDF(tipo,d){
     aT('',d.descripcion);
     if((d.fotosHallazgo||[]).length){
       y+=2;
-      d.fotosHallazgo.forEach(f=>aImgFull(f,62));
+      aImgRow(d.fotosHallazgo,60);
     }
     y+=3;aS('PROPUESTA DE MEJORA');
     aT('',d.propuestaMejora||'Sin propuesta registrada');
     if((d.fotosPropuesta||[]).length){
       y+=2;
-      d.fotosPropuesta.forEach(f=>aImgFull(f,62));
+      aImgRow(d.fotosPropuesta,60);
     }
   }
   if(tipo==='extintores'){
