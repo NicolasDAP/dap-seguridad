@@ -828,9 +828,6 @@ textarea{min-height:74px;resize:vertical}
   <textarea id="ci-medida-prop" placeholder="Descripción de la medida correctiva..."></textarea>
   <label class="fl">Nombre encargado de seguimiento</label>
   <input type="text" id="ci-encargado" placeholder="Nombre completo">
-  <label class="fl">Cargo del encargado</label>
-  <select id="ci-cargo-enc" onchange="toggleCargoOtro('ci-cargo-enc','ci-cargo-enc-otro')"><option value="">Seleccionar nivel de riesgo primero...</option></select>
-  <input type="text" id="ci-cargo-enc-otro" placeholder="Escribe el cargo..." style="display:none">
   <label class="fl">Fecha comprometida de cierre</label>
   <input type="date" id="ci-plazo">
   <button class="btn btn-orange" onclick="fCI()"><i class="ti ti-file-text"></i> Emitir informe PDF</button>
@@ -865,7 +862,7 @@ textarea{min-height:74px;resize:vertical}
 <script>
 const SHEETS_URL='https://script.google.com/macros/s/AKfycbzWzvIB-VUIesCUAhStg59AI2-CU7V6p7BNe7cXd7oSqKamS50Lcvi-X3Hf4nFPnAKQvA/exec';
 const DK='dap-db', UK='dap-usuarios', ACK='dap-usuario-activo';
-const CARGOS={v:['Supervisor de área','Jefe de área'],a:['Jefe de área','Subgerente de área'],n:['Gerente de área','Gerente general'],r:['Director ejecutivo','Directorio']};
+// (Constante CARGOS eliminada — ya no se usa "cargo del encargado", solo el nombre)
 const BGC={Tolerable:'#EAF3DE',Moderado:'#FAEEDA',Importante:'#FAECE7',Intolerable:'#FCEBEB'};
 const FGC={Tolerable:'#27500A',Moderado:'#633806',Importante:'#712B13',Intolerable:'#A32D2D'};
 const BDC={Tolerable:'#97C459',Moderado:'#FAC775',Importante:'#F0997B',Intolerable:'#F09595'};
@@ -1009,7 +1006,6 @@ function gt(id){
     document.getElementById('ci-foto-info').innerHTML='';
     document.getElementById('ai-foto-info').innerHTML='';
     ['ci-rv','ci-ra','ci-rn','ci-rr'].forEach(x=>document.getElementById(x).className='rb');
-    document.getElementById('ci-cargo-enc').innerHTML='<option value="">Seleccionar nivel de riesgo primero...</option>';
     document.getElementById('paraliz-banner').classList.remove('open');
     document.getElementById('campos-ci').classList.remove('visible');
     document.getElementById('campos-ai').classList.remove('visible');
@@ -1303,24 +1299,6 @@ function toggleOtroSeccion(prefix){
   if(sel&&otroInp) otroInp.style.display=(sel.value==='__otro')?'block':'none';
 }
 
-// Resuelve el valor final de un select de Cargo (usado en CI/AI y en asignación de NC)
-// cuando se eligió "+Otro" — toma el texto libre del input pareado.
-function resolverCargoOtro(selectId, otroInputId){
-  const sel=document.getElementById(selectId);
-  if(!sel) return '';
-  if(sel.value==='__otro'){
-    const inp=document.getElementById(otroInputId);
-    return inp?inp.value.trim():'';
-  }
-  return sel.value;
-}
-function toggleCargoOtro(selectId, otroInputId){
-  const sel=document.getElementById(selectId);
-  const inp=document.getElementById(otroInputId);
-  if(sel&&inp) inp.style.display=(sel.value==='__otro')?'block':'none';
-}
-
-
 function updSecciones(areaSelId, seccionSelId){
   const areaSel=document.getElementById(areaSelId||'ins-area');
   const sel=document.getElementById(seccionSelId||'ins-seccion');
@@ -1492,8 +1470,6 @@ function sRCI(n,c){
   rci=n;rcc=c;
   ['ci-rv','ci-ra','ci-rn','ci-rr'].forEach(x=>document.getElementById(x).className='rb');
   document.getElementById('ci-r'+c).className='rb r'+c;
-  document.getElementById('ci-cargo-enc').innerHTML='<option value="">Seleccionar cargo...</option>'+CARGOS[c].map(x=>`<option>${x}</option>`).join('')+'<option value="__otro">Otro</option>';
-  document.getElementById('ci-cargo-enc-otro').style.display='none';
   document.getElementById('paraliz-banner').classList.toggle('open',n==='Intolerable');
 }
 
@@ -2043,7 +2019,6 @@ function rNL(){
     const as=n.riesgo&&n.re&&n.enc;
     const bg=n.riesgo?(BGC[n.riesgo]||'#f5f5f5'):'#f5f5f5';
     const col=n.riesgo?(FGC[n.riesgo]||'#888'):'#888';
-    const co=(CARGOS[n.rc]||[]).map(x=>`<option ${n.cargo===x?'selected':''}>${x}</option>`).join('')+'<option value="__otro">Otro</option>';
     return `<div>
       <div style="display:flex;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid var(--border)">
         <div style="flex:1">
@@ -2067,9 +2042,6 @@ function rNL(){
         <input type="text" id="re${i}" value="${n.re||''}" placeholder="Nombre responsable directo">
         <label class="fl">Encargado de seguimiento</label>
         <input type="text" id="en${i}" value="${n.enc||''}" placeholder="Nombre completo">
-        <label class="fl">Cargo encargado</label>
-        <select id="ca${i}" onchange="toggleCargoOtro('ca${i}','ca-otro${i}')"><option value="">Selecciona nivel primero...</option>${co}</select>
-        <input type="text" id="ca-otro${i}" placeholder="Escribe el cargo..." style="display:none">
         <label class="fl">Plazo de corrección</label>
         <input type="date" id="pl${i}" value="${n.plazo||''}">
         <label class="fl">Comentario</label>
@@ -2094,8 +2066,6 @@ function sRN(i,n,c){
   const bs=document.querySelectorAll(`#np${i} .rb`);
   bs.forEach(b=>b.className='rb');
   bs[['v','a','n','r'].indexOf(c)].className='rb r'+c;
-  document.getElementById('ca'+i).innerHTML='<option value="">Seleccionar cargo...</option>'+CARGOS[c].map(x=>`<option>${x}</option>`).join('')+'<option value="__otro">Otro</option>';
-  const otroInp=document.getElementById('ca-otro'+i); if(otroInp) otroInp.style.display='none';
 }
 
 function sFN(i,inp){if(inp.files&&inp.files[0]) compress(inp.files[0],(d,o,c)=>{cI.ncs[i].foto=d;document.getElementById('nfl'+i).textContent='Foto adjunta';cinfo('nfi'+i,o,c);});}
@@ -2103,7 +2073,6 @@ function sFN(i,inp){if(inp.files&&inp.files[0]) compress(inp.files[0],(d,o,c)=>{
 function gNP(i){
   cI.ncs[i].re=document.getElementById('re'+i).value;
   cI.ncs[i].enc=document.getElementById('en'+i).value;
-  cI.ncs[i].cargo=resolverCargoOtro('ca'+i,'ca-otro'+i);
   cI.ncs[i].plazo=document.getElementById('pl'+i).value;
   cI.ncs[i].com=document.getElementById('co'+i).value;
   document.getElementById('np'+i).classList.remove('open');
@@ -2180,7 +2149,7 @@ function fCI(sinPDF){
   if(!tipoCI){alert('Selecciona el tipo de reporte (Condición o Acción insegura)');return;}
   const tipo=tipoCI;
   const{area:ciArea,seccion:ciSeccion}=resolverAreaSeccion('ci');
-  const d={fecha:document.getElementById('ci-fecha').value,hora:document.getElementById('ci-hora').value,area:ciArea,seccion:ciSeccion,razonSocial:document.getElementById('ci-rs').value,consecuencia:document.getElementById('ci-consecuencia').value,riesgo:rci,riesgoColor:rcc,encargado:document.getElementById('ci-encargado').value,cargo:resolverCargoOtro('ci-cargo-enc','ci-cargo-enc-otro'),plazo:document.getElementById('ci-plazo').value,accionInmediata:document.getElementById('ci-accion-inm').value,medidaCorr:document.getElementById('ci-medida-prop').value};
+  const d={fecha:document.getElementById('ci-fecha').value,hora:document.getElementById('ci-hora').value,area:ciArea,seccion:ciSeccion,razonSocial:document.getElementById('ci-rs').value,consecuencia:document.getElementById('ci-consecuencia').value,riesgo:rci,riesgoColor:rcc,encargado:document.getElementById('ci-encargado').value,plazo:document.getElementById('ci-plazo').value,accionInmediata:document.getElementById('ci-accion-inm').value,medidaCorr:document.getElementById('ci-medida-prop').value};
   if(!d.fecha||!d.area){alert('Completa los campos requeridos');return;}
   if(tipo==='CondicionInsegura'){d.desc=document.getElementById('ci-desc-cond').value;d.equipo=document.getElementById('ci-equipo').value;d.foto=cifd;}
   else{d.desc=document.getElementById('ai-desc-cond').value;d.actividadEjec=document.getElementById('ai-actividad').value;d.cargoTrab=document.getElementById('ai-cargo-trab').value;d.estandar=document.getElementById('ai-estandar').value;d.intervencion=document.getElementById('ai-intervencion').value;d.foto=aifd;}
@@ -2672,7 +2641,6 @@ function construirDocPDF(tipo,d){
         aF('  Nivel de riesgo',n.riesgo||'No asignado');
         aF('  Resp. ejecucion',n.respEjec||n.re||'-');
         aF('  Encargado seguimiento',n.encargado||n.enc||'-');
-        aF('  Cargo encargado',n.cargo||'-');
         aF('  Plazo',n.plazo||'-');
         aF('  Estado',n.estado||'Pendiente');
         if(n.tsVerif||n.tv)aF('  Verificado',n.tsVerif||n.tv);
@@ -2818,7 +2786,7 @@ function construirDocPDF(tipo,d){
     y+=3;aS('GESTION Y SEGUIMIENTO');
     aT('Accion inmediata adoptada',d.accionInmediata||d.medida||'-');
     aT('Medida correctiva propuesta',d.medidaCorr||'-');
-    aF('Encargado de seguimiento',d.encargado||'-');aF('Cargo encargado',d.cargo||'-');
+    aF('Encargado de seguimiento',d.encargado||'-');
     aF('Plazo comprometido',d.plazo||'-');aF('Estado actual',d.estadoMedida||'Pendiente');
     if(d.tsVerif)aF('Verificado',d.tsVerif);
     if(d.foto){y+=3;aS('FOTOGRAFIA');aImgFull(d.foto,68);}
@@ -2897,18 +2865,18 @@ function expCSV(){
   if(!db.length){alert('Sin registros para exportar');return;}
   const B='\uFEFF',sep='\t';
   let I='Folio\tFecha\tHora\tRazon Social\tArea\tSeccion\tTurno\tInspector\tCargo\tOK\tNC\tNA\tEstado\tVerificado\tObservaciones\n';
-  let N='Folio Insp\tFecha\tArea\tInspector\tItem NC\tCategoria\tNivel Riesgo\tResp Ejecucion\tEncargado\tCargo\tPlazo\tComentario\tEstado\tVerificado\n';
+  let N='Folio Insp\tFecha\tArea\tInspector\tItem NC\tCategoria\tNivel Riesgo\tResp Ejecucion\tEncargado\tPlazo\tComentario\tEstado\tVerificado\n';
   let O='Folio\tFecha\tHora\tRazon Social\tArea\tSeccion\tInspector\tCargo\tPuesto\tTipo Conducta\tCategoria\tDescripcion\tAccion Tomada\tEstado\tVerificado\n';
-  let C='Folio\tFecha\tHora\tTipo\tRazon Social\tArea\tSeccion\tInspector\tDescripcion\tGravedad\tConsecuencia\tEncargado\tCargo\tPlazo\tAccion Inm\tMedida Corr\tEstado\tVerificado\n';
+  let C='Folio\tFecha\tHora\tTipo\tRazon Social\tArea\tSeccion\tInspector\tDescripcion\tGravedad\tConsecuencia\tEncargado\tPlazo\tAccion Inm\tMedida Corr\tEstado\tVerificado\n';
   const c=v=>(v||'').toString().replace(/\t/g,' ').replace(/\n/g,' ');
   db.forEach(r=>{
     if(r.tipo==='Inspeccion'){
       const cl=r.clItems||[];const ok=cl.filter(x=>x.resp==='OK').length,nc=cl.filter(x=>x.resp==='NC').length,na=cl.filter(x=>x.resp==='NA').length;
       I+=[c(r.folio),c(r.fecha),c(r.hora),c(r.razonSocial),c(r.area),c(r.seccion),c(r.turno),c(r.inspector),c(r.cargo),ok,nc,na,c(r.estadoMedida),c(r.tsVerif),c(r.obs)].join(sep)+'\n';
-      (r.ncs||[]).forEach(n=>N+=[c(r.folio),c(r.fecha),c(r.area),c(r.inspector),c(n.item||n.it),c(n.cat),c(n.riesgo),c(n.respEjec||n.re),c(n.encargado||n.enc),c(n.cargo),c(n.plazo),c(n.comentario||n.com),c(n.estado),c(n.tsVerif||n.tv)].join(sep)+'\n');
+      (r.ncs||[]).forEach(n=>N+=[c(r.folio),c(r.fecha),c(r.area),c(r.inspector),c(n.item||n.it),c(n.cat),c(n.riesgo),c(n.respEjec||n.re),c(n.encargado||n.enc),c(n.plazo),c(n.comentario||n.com),c(n.estado),c(n.tsVerif||n.tv)].join(sep)+'\n');
     }
     if(r.tipo==='Observacion') O+=[c(r.folio),c(r.fecha),c(r.hora),c(r.razonSocial),c(r.area),c(r.seccion),c(r.inspector),c(r.cargo),c(r.puesto),c(r.tipo_conducta||r.tipo),c(r.cat),c(r.desc),c(r.accion),c(r.estadoMedida),c(r.tsVerif)].join(sep)+'\n';
-    if(r.tipo==='CondicionInsegura'||r.tipo==='AccionInsegura') C+=[c(r.folio),c(r.fecha),c(r.hora),c(r.tipo),c(r.razonSocial),c(r.area),c(r.seccion),c(r.inspector),c(r.desc),c(r.riesgo),c(r.consecuencia),c(r.encargado),c(r.cargo),c(r.plazo),c(r.accionInmediata||r.medida),c(r.medidaCorr),c(r.estadoMedida),c(r.tsVerif)].join(sep)+'\n';
+    if(r.tipo==='CondicionInsegura'||r.tipo==='AccionInsegura') C+=[c(r.folio),c(r.fecha),c(r.hora),c(r.tipo),c(r.razonSocial),c(r.area),c(r.seccion),c(r.inspector),c(r.desc),c(r.riesgo),c(r.consecuencia),c(r.encargado),c(r.plazo),c(r.accionInmediata||r.medida),c(r.medidaCorr),c(r.estadoMedida),c(r.tsVerif)].join(sep)+'\n';
   });
   const dl=(n,ct)=>{const b=new Blob([B+ct],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;document.body.appendChild(a);a.click();document.body.removeChild(a);};
   dl('DAP_Inspecciones.csv',I);
