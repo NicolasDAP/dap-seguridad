@@ -307,6 +307,10 @@ textarea{min-height:74px;resize:vertical}
     <div class="divider"></div>
     <button class="btn btn-black" onclick="gt('s-catalogo-areas')"><i class="ti ti-map-2"></i> Catálogo de áreas</button>
   </div>
+  <div id="acceso-respaldo-registros" style="display:none">
+    <div class="divider"></div>
+    <button class="btn btn-black" onclick="gt('s-respaldo-registros')"><i class="ti ti-database-export"></i> Respaldo de registros</button>
+  </div>
 </div>
 
 <!-- PANEL CONFIGURACION DE ALERTAS (solo admin) -->
@@ -362,6 +366,52 @@ textarea{min-height:74px;resize:vertical}
 
   <div class="divider"></div>
   <div id="cat-areas-body"></div>
+</div>
+
+<!-- RESPALDO DE REGISTROS (solo admin) -->
+<div id="s-respaldo-registros" class="scr">
+  <button class="btn-sm" onclick="gt('s-usuarios')" style="margin-bottom:14px"><i class="ti ti-arrow-left"></i> Usuarios</button>
+  <div class="page-title">Respaldo de registros</div>
+  <div class="page-sub">Exporta o importa inspecciones, observaciones, CI/AI, caminatas y hallazgos entre dispositivos</div>
+
+  <div class="alert-banner" id="reg-status"></div>
+
+  <label class="fl">Exportar</label>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button class="btn-sm" style="flex:1;background:#E8F0FB;color:#0F4C81" onclick="exportarRegistros(true)"><i class="ti ti-download"></i> Completo (con fotos)</button>
+    <button class="btn-sm" style="flex:1;background:#E8F0FB;color:#0F4C81" onclick="exportarRegistros(false)"><i class="ti ti-download"></i> Liviano (sin fotos)</button>
+  </div>
+  <div class="page-sub" style="margin-top:-4px">El archivo liviano no trae fotos — si luego lo usas para reemplazar un registro que sí las tenía, esas fotos se pierden.</div>
+
+  <div class="divider"></div>
+
+  <label class="fl">Importar</label>
+  <button class="btn-sm" style="width:100%;background:#FEF0E8;color:var(--orange)" onclick="document.getElementById('reg-import-input').click()"><i class="ti ti-upload"></i> Elegir archivo</button>
+  <input type="file" id="reg-import-input" accept=".json" style="display:none" onchange="importarRegistros(this)">
+  <div class="page-sub">Los registros nuevos se agregan solos. Si un registro del archivo ya existe en este dispositivo pero con cambios, se te va a preguntar cuál versión dejar.</div>
+</div>
+
+<!-- CONFLICTOS DE IMPORTACION -->
+<div id="s-conflictos-import" class="scr">
+  <button class="btn-sm" onclick="cancelarImportacion()" style="margin-bottom:14px"><i class="ti ti-arrow-left"></i> Cancelar importación</button>
+  <div class="page-title">Revisar importación</div>
+  <div class="page-sub" id="conf-resumen"></div>
+
+  <div id="conf-aviso-liviano" class="alert-banner" style="background:#FEF0E8;color:var(--orange);border-color:var(--orange)">
+    Este archivo es liviano (sin fotos). Si eliges "Usar el importado" en un conflicto, ese registro queda sin las fotos que tenía.
+  </div>
+
+  <div style="display:flex;gap:8px;margin:10px 0 4px">
+    <button class="btn-sm" style="flex:1;background:var(--surface2)" onclick="elegirTodosConflictos('mantener')"><i class="ti ti-device-floppy"></i> Mantener todos los míos</button>
+    <button class="btn-sm" style="flex:1;background:var(--surface2)" onclick="elegirTodosConflictos('importado')"><i class="ti ti-replace"></i> Usar todos los importados</button>
+  </div>
+
+  <div class="divider"></div>
+  <div id="conf-lista"></div>
+  <div class="divider"></div>
+
+  <button class="btn btn-orange" onclick="aplicarImportacion()"><i class="ti ti-check"></i> Confirmar importación</button>
+  <button class="btn btn-sec" onclick="cancelarImportacion()">Cancelar</button>
 </div>
 
 <!-- PERFIL NUEVO -->
@@ -1122,6 +1172,7 @@ function rUsuarios(){
   if(!usuarios.length){ul.innerHTML='<div style="font-size:13px;color:var(--muted);padding:8px 0">Sin usuarios. Crea el primero.</div>';
     document.getElementById('acceso-config-alertas').style.display='none';
     const accCat0=document.getElementById('acceso-catalogo-areas'); if(accCat0) accCat0.style.display='none';
+    const accReg0=document.getElementById('acceso-respaldo-registros'); if(accReg0) accReg0.style.display='none';
     return;}
   ul.innerHTML=usuarios.map(u=>{
     const ini=(u.nombre||'?')[0].toUpperCase();
@@ -1137,6 +1188,7 @@ function rUsuarios(){
   }).join('');
   document.getElementById('acceso-config-alertas').style.display=(usuarioActivo&&usuarioActivo.rol==='admin')?'block':'none';
   const accCat=document.getElementById('acceso-catalogo-areas'); if(accCat) accCat.style.display=(usuarioActivo&&usuarioActivo.rol==='admin')?'block':'none';
+  const accReg=document.getElementById('acceso-respaldo-registros'); if(accReg) accReg.style.display=(usuarioActivo&&usuarioActivo.rol==='admin')?'block':'none';
 }
 
 function selUsuario(uid){
@@ -1451,6 +1503,115 @@ function importarCatAreas(inp){
     inp.value='';
   };
   reader.readAsText(inp.files[0]);
+}
+
+// RESPALDO DE REGISTROS (Inspección, Observación, CI/AI, Caminata, Hallazgo)
+// La duplicidad NUNCA se detecta por folio: el folio es un correlativo local por
+// dispositivo (ver cnt()), así que dos dispositivos distintos pueden generar el
+// mismo folio para registros que no tienen nada que ver. La llave real es `ts`
+// (Date.now() del momento de creación), igual que ya usa mig() para fusionar
+// versiones viejas del localStorage.
+function quitarFotosObj(v){
+  if(typeof v==='string') return v.startsWith('data:image')?null:v;
+  if(Array.isArray(v)) return v.map(quitarFotosObj);
+  if(v&&typeof v==='object'){const o={};for(const k in v) o[k]=quitarFotosObj(v[k]);return o;}
+  return v;
+}
+function exportarRegistros(conFotos){
+  if(!db.length){alert('No hay registros para exportar.');return;}
+  let regs=JSON.parse(JSON.stringify(db));
+  if(!conFotos) regs=regs.map(quitarFotosObj);
+  const payload={_tipo:'DAP_registros_export',_version:1,_fecha:hoy()+' '+hora(),_conFotos:!!conFotos,_cantidad:regs.length,registros:regs};
+  const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='DAP_registros_'+(conFotos?'completo_':'liviano_')+hoy()+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  alert((conFotos?'Respaldo completo':'Respaldo liviano')+' exportado: '+regs.length+' registro(s).');
+}
+
+let importPendiente=null;
+
+function importarRegistros(inp){
+  if(!inp.files||!inp.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(data._tipo!=='DAP_registros_export'||!Array.isArray(data.registros)){alert('Este archivo no es un respaldo de registros válido.');inp.value='';return;}
+      const porTs={};
+      db.forEach(r=>{if(r.ts) porTs[r.ts]=r;});
+      const nuevos=[], conflictos=[];
+      data.registros.forEach(r=>{
+        if(!r.ts){nuevos.push(r);return;}
+        const ex=porTs[r.ts];
+        if(!ex){nuevos.push(r);return;}
+        if(JSON.stringify(ex)===JSON.stringify(r)) return; // idéntico, no hace falta nada
+        conflictos.push({ts:r.ts,folio:r.folio||'-',tipo:r.tipo||'-',fecha:r.fecha||'-',area:r.area||'',existente:ex,importado:r,decision:'mantener'});
+      });
+      importPendiente={nuevos,conflictos,conFotos:!!data._conFotos,fecha:data._fecha||'fecha desconocida'};
+      if(conflictos.length===0){
+        aplicarImportacion();
+      }else{
+        rConflictosImport();
+        gt('s-conflictos-import');
+      }
+    }catch(err){alert('Error al leer el archivo: '+err);}
+    inp.value='';
+  };
+  reader.readAsText(inp.files[0]);
+}
+
+function rConflictosImport(){
+  if(!importPendiente) return;
+  const {nuevos,conflictos,conFotos,fecha}=importPendiente;
+  document.getElementById('conf-resumen').textContent=
+    `Archivo del ${fecha}. ${nuevos.length} registro(s) nuevo(s) se agregarán directo. ${conflictos.length} registro(s) tienen versión distinta en este dispositivo — elige cuál dejar.`;
+  document.getElementById('conf-aviso-liviano').classList.toggle('open',!conFotos);
+  document.getElementById('conf-lista').innerHTML=conflictos.map(c=>`
+    <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="folio-badge">${c.folio}</span>
+        <span style="font-size:12px;color:var(--muted)">${c.tipo} · ${c.fecha}${c.area?' · '+c.area:''}</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm conf-op" data-ts="${c.ts}" data-op="mantener" style="flex:1;background:${c.decision==='mantener'?'var(--black)':'var(--surface2)'};color:${c.decision==='mantener'?'#fff':'var(--text)'}" onclick="elegirConflicto('${c.ts}','mantener')">Mantener el mío</button>
+        <button class="btn-sm conf-op" data-ts="${c.ts}" data-op="importado" style="flex:1;background:${c.decision==='importado'?'var(--orange)':'var(--surface2)'};color:${c.decision==='importado'?'#fff':'var(--text)'}" onclick="elegirConflicto('${c.ts}','importado')">Usar el importado</button>
+      </div>
+    </div>`).join('');
+}
+
+function elegirConflicto(ts,decision){
+  const c=importPendiente.conflictos.find(x=>String(x.ts)===String(ts));
+  if(c){c.decision=decision;rConflictosImport();}
+}
+function elegirTodosConflictos(decision){
+  importPendiente.conflictos.forEach(c=>c.decision=decision);
+  rConflictosImport();
+}
+
+function aplicarImportacion(){
+  if(!importPendiente) return;
+  const {nuevos,conflictos}=importPendiente;
+  let agregados=0, reemplazados=0, mantenidos=0;
+  nuevos.forEach(r=>{db.push(r);agregados++;});
+  conflictos.forEach(c=>{
+    if(c.decision==='importado'){
+      const idx=db.findIndex(r=>String(r.ts)===String(c.ts));
+      if(idx>-1){db[idx]=c.importado;reemplazados++;}
+    }else mantenidos++;
+  });
+  db.sort((a,b)=>(a.ts||0)-(b.ts||0));
+  sv();
+  importPendiente=null;
+  alert(`Importación completa.\n${agregados} registro(s) nuevo(s) agregado(s).\n${reemplazados} reemplazado(s) con la versión importada.\n${mantenidos} mantenido(s) sin cambios.`);
+  gt('s-usuarios');
+}
+
+function cancelarImportacion(){
+  importPendiente=null;
+  gt('s-respaldo-registros');
 }
 
 // OBSERVACION
