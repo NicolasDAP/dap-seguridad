@@ -486,9 +486,18 @@ textarea{min-height:74px;resize:vertical}
     <button class="filter-btn" data-f="corregidos" onclick="setFiltroNC('corregidos',this)">Corregidos</button>
     <button class="filter-btn" data-f="cerrados" onclick="setFiltroNC('cerrados',this)">Cerrados</button>
   </div>
-  <div id="nc-abiertas-cont"></div>
-  <div id="nc-corregidas-cont"></div>
-  <div id="nc-cerradas-cont"></div>
+  <div style="display:flex;gap:8px;margin-bottom:14px">
+    <button class="btn-sm" id="vnc-estado" style="flex:1;background:var(--black);color:#fff" onclick="setVistaNC('estado')"><i class="ti ti-list"></i> Por estado</button>
+    <button class="btn-sm" id="vnc-informe" style="flex:1;background:var(--surface2);color:var(--text)" onclick="setVistaNC('informe')"><i class="ti ti-folder"></i> Por informe</button>
+  </div>
+  <div id="nc-vista-estado">
+    <div id="nc-abiertas-cont"></div>
+    <div id="nc-corregidas-cont"></div>
+    <div id="nc-cerradas-cont"></div>
+  </div>
+  <div id="nc-vista-informe" style="display:none">
+    <div id="nc-informes-cont"></div>
+  </div>
 </div>
 
 <!-- HISTORIAL INFORMES -->
@@ -504,6 +513,8 @@ textarea{min-height:74px;resize:vertical}
     <button class="filter-btn" data-ft="Inspeccion" onclick="setFiltroInf('Inspeccion',this)">Inspecciones</button>
     <button class="filter-btn" data-ft="Observacion" onclick="setFiltroInf('Observacion',this)">Observaciones</button>
     <button class="filter-btn" data-ft="CondicionInsegura" onclick="setFiltroInf('CondicionInsegura',this)">CI/AI</button>
+    <button class="filter-btn" data-ft="Caminata" onclick="setFiltroInf('Caminata',this)">Caminatas</button>
+    <button class="filter-btn" data-ft="Hallazgo" onclick="setFiltroInf('Hallazgo',this)">Hallazgos</button>
   </div>
   <div id="hist-inf-cont"></div>
 </div>
@@ -625,16 +636,8 @@ textarea{min-height:74px;resize:vertical}
     <option>89.970.700-1 — MAQUINARIAS PIVCEVIC E HIJOS LTDA.</option>
   </select>
   <label class="fl">Área / Sector</label>
-  <select id="ext-area">
-    <option value="">Seleccionar...</option>
-    <option>Hangar principal</option>
-    <option>Hangar 135</option>
-    <option>Abastecimiento</option>
-    <option>Counter / Operaciones</option>
-    <option>Área de carga</option>
-    <option>Plataforma / pista</option>
-    <option>Múltiples áreas</option>
-  </select>
+  <select id="ext-area" onchange="toggleOtroSimple('ext-area','ext-area-otro')"></select>
+  <input type="text" id="ext-area-otro" placeholder="Escribe el área..." style="display:none">
   <label class="fl">Fecha</label><input type="date" id="ext-fecha">
   <label class="fl">Hora inicio</label><input type="time" id="ext-hora">
   <label class="fl">Notas / contexto (opcional)</label>
@@ -707,16 +710,8 @@ textarea{min-height:74px;resize:vertical}
   <label class="fl">Fecha</label><input type="date" id="cam-fecha">
   <label class="fl">Hora inicio</label><input type="time" id="cam-hora">
   <label class="fl">Area recorrida</label>
-  <select id="cam-area">
-    <option value="">Seleccionar...</option>
-    <option>Hangar principal</option>
-    <option>Hangar 135</option>
-    <option>Abastecimiento</option>
-    <option>Counter / Operaciones</option>
-    <option>Area de carga</option>
-    <option>Plataforma / pista</option>
-    <option>Multiples areas</option>
-  </select>
+  <select id="cam-area" onchange="toggleOtroSimple('cam-area','cam-area-otro')"></select>
+  <input type="text" id="cam-area-otro" placeholder="Escribe el área..." style="display:none">
   <label class="fl">Tipo de recorrido</label>
   <div class="togrow" id="cam-tipo-row">
     <div class="tog" onclick="selCamTipo('Programado',this)">Programado</div>
@@ -738,7 +733,19 @@ textarea{min-height:74px;resize:vertical}
   <div id="camb"></div>
   <label class="fl" style="margin-top:12px">Observaciones generales del recorrido</label>
   <textarea id="cam-obs" placeholder="Evaluacion global, hallazgos adicionales..."></textarea>
-  <button class="btn btn-orange" onclick="fCam()"><i class="ti ti-file-text"></i> Emitir informe PDF</button>
+
+  <div class="sec-div" style="margin-top:16px">Firma de conformidad (opcional)</div>
+  <div class="page-sub" style="margin-top:-4px">Para que firme quien te acompañó en el recorrido — además de tu firma, que ya se incluye automáticamente</div>
+  <label class="fl">Nombre de quien firma</label>
+  <input type="text" id="cam-firma-nombre" placeholder="Nombre completo">
+  <label class="fl">Cargo</label>
+  <input type="text" id="cam-firma-cargo" placeholder="Cargo o rol">
+  <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:6px;background:#fff">
+    <canvas id="cam-firma-canvas" style="width:100%;height:150px;touch-action:none;display:block"></canvas>
+  </div>
+  <button class="btn-sm" style="width:100%;margin-top:6px" onclick="limpiarFirmaCam()"><i class="ti ti-eraser"></i> Limpiar firma</button>
+
+  <button class="btn btn-orange" style="margin-top:16px" onclick="fCam()"><i class="ti ti-file-text"></i> Emitir informe PDF</button>
   <button class="btn btn-black" onclick="fCamSinPDF()"><i class="ti ti-device-floppy"></i> Guardar sin PDF</button>
   <button class="btn btn-sec" onclick="gt('s-home')">Cancelar</button>
 </div>
@@ -921,6 +928,23 @@ const LOGO_B64 = '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAg
 
 let db=[], usuarios=[], usuarioActivo=null, ofd=null, otp='', rci='', rcc='', tipoCI='', cifd=null, aifd=null, cI={};
 let filtroNC='todos', filtroInf='todos';
+let vistaNC='estado';
+let ncInformesExpandidos=new Set();
+function setVistaNC(v){
+  vistaNC=v;
+  document.getElementById('vnc-estado').style.background=v==='estado'?'var(--black)':'var(--surface2)';
+  document.getElementById('vnc-estado').style.color=v==='estado'?'#fff':'var(--text)';
+  document.getElementById('vnc-informe').style.background=v==='informe'?'var(--black)':'var(--surface2)';
+  document.getElementById('vnc-informe').style.color=v==='informe'?'#fff':'var(--text)';
+  document.getElementById('nc-vista-estado').style.display=v==='estado'?'block':'none';
+  document.getElementById('nc-vista-informe').style.display=v==='informe'?'block':'none';
+  rHN();
+}
+function toggleInformeNC(ri){
+  if(ncInformesExpandidos.has(ri)) ncInformesExpandidos.delete(ri);
+  else ncInformesExpandidos.add(ri);
+  rHN();
+}
 let pinCallback=null, pinMode='verify', pinBuffer='';
 let firmaEditarData=null, firmaNuevoData=null;
 
@@ -1045,9 +1069,14 @@ function gt(id){
     document.getElementById('ots').className='tog';document.getElementById('oti').className='tog';
     poblarSelectArea('obs-area');
   }
-  if(id==='s-ext-init'){document.getElementById('ext-fecha').value=hoy();document.getElementById('ext-hora').value=hora();}
-  if(id==='s-cam-init'){document.getElementById('cam-fecha').value=hoy();document.getElementById('cam-hora').value=hora();}
+  if(id==='s-ext-init'){document.getElementById('ext-fecha').value=hoy();document.getElementById('ext-hora').value=hora();poblarSelectArea('ext-area');document.getElementById('ext-area-otro').style.display='none';document.getElementById('ext-area-otro').value='';}
+  if(id==='s-cam-init'){document.getElementById('cam-fecha').value=hoy();document.getElementById('cam-hora').value=hora();poblarSelectArea('cam-area');document.getElementById('cam-area-otro').style.display='none';document.getElementById('cam-area-otro').value='';}
   if(id==='s-hal-init'){document.getElementById('hal-fecha').value=hoy();document.getElementById('hal-hora').value=hora();poblarSelectArea('hal-area');}
+  if(id==='s-cam-cl'){
+    document.getElementById('cam-firma-nombre').value='';
+    document.getElementById('cam-firma-cargo').value='';
+    setTimeout(initFirmaCam,0);
+  }
   if(id==='s-ci-init'){
     document.getElementById('ci-fecha').value=hoy();document.getElementById('ci-hora').value=hora();
     rci='';rcc='';tipoCI='';cifd=null;aifd=null;
@@ -1343,6 +1372,28 @@ function poblarSelectArea(selectId){
   const prefix=selectId.replace(/-area$/,'');
   const otroInp=document.getElementById(prefix+'-area-otro');
   if(otroInp) otroInp.style.display='none';
+}
+
+function toggleOtroSimple(selectId,otroInputId){
+  const sel=document.getElementById(selectId);
+  const inp=document.getElementById(otroInputId);
+  if(sel&&inp) inp.style.display=(sel.value==='__otro')?'block':'none';
+}
+// Para módulos con un solo nivel de área (sin sección), ej. Caminata de seguridad.
+function resolverAreaSimple(selectId,otroInputId){
+  const sel=document.getElementById(selectId);
+  let val=sel?sel.value:'';
+  if(val==='__otro'){
+    const inp=document.getElementById(otroInputId);
+    val=inp?inp.value.trim():'';
+    if(val&&!CAT_AREAS.macro.some(m=>m.nombre.toLowerCase()===val.toLowerCase())){
+      if(confirm(`"${val}" no está en el catálogo de áreas.\n\n¿Agregarla para reutilizarla la próxima vez?`)){
+        CAT_AREAS.macro.push({id:catAreasUid(),nombre:val});
+        guardarCatAreas();
+      }
+    }
+  }
+  return val;
 }
 
 function toggleOtroSeccion(prefix){
@@ -2421,13 +2472,68 @@ function rHN(){
     (soloAb||soloCo)?'':
     '<div class="sec-div" style="margin-top:20px"><i class="ti ti-circle-check" style="color:var(--green)"></i> Cerradas ('+ce.length+')</div>'+
     (ce.length?ce.map((n,i)=>rN(n,ab.length+co.length+i)).join(''):'<div style="font-size:13px;color:var(--muted);padding:8px 0">Sin NC cerradas</div>');
+
+  // VISTA POR INFORME — agrupa las mismas NC ya filtradas (búsqueda/tipo/estado)
+  // por el registro (_ri) al que pertenecen, en vez de por estado.
+  const porInforme={};
+  all.forEach(n=>{(porInforme[n._ri]=porInforme[n._ri]||[]).push(n);});
+  const risOrdenados=Object.keys(porInforme).map(Number).sort((a,b)=>(db[b]?.ts||0)-(db[a]?.ts||0));
+  let giInforme=0;
+  const contInf=document.getElementById('nc-informes-cont');
+  if(!risOrdenados.length){
+    contInf.innerHTML='<div style="font-size:13px;color:var(--muted);padding:8px 0">Sin NC que coincidan con el filtro.</div>';
+  }else{
+    contInf.innerHTML=risOrdenados.map(ri=>{
+      const r=db[ri]; if(!r) return '';
+      const items=porInforme[ri];
+      const abiertasInf=items.filter(n=>n.estado==='Pendiente'||n.estado==='En proceso').length;
+      const origen=items[0]._origen;
+      const[obg,ocl]=oc[origen]||['#F1EFE8','#444'];
+      const expanded=ncInformesExpandidos.has(ri);
+      const cuerpo=expanded?`<div style="margin-top:10px">${items.map(n=>rN(n,'inf'+(giInforme++))).join('')}</div>`:'';
+      return `<div class="hi" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleInformeNC(${ri})">
+          <div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+              <span style="font-size:10px;padding:2px 9px;border-radius:20px;font-weight:700;background:${obg};color:${ocl}">${origen}</span>
+              <span class="folio-badge">${r.folio||'-'}</span>
+            </div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">${r.area}${r.seccion?' — '+r.seccion:''}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${r.fecha} — ${abiertasInf} abierta(s) de ${items.length}</div>
+          </div>
+          <i class="ti ti-chevron-${expanded?'up':'down'}" style="font-size:22px;color:var(--muted);flex-shrink:0"></i>
+        </div>
+        ${cuerpo}
+      </div>`;
+    }).join('');
+  }
 }
 
 function tV(id){const p=document.getElementById(id);const o=p.classList.contains('open');document.querySelectorAll('.panel').forEach(e=>e.classList.remove('open'));if(!o){p.classList.add('open');setTimeout(()=>p.scrollIntoView({behavior:'smooth',block:'nearest'}),80);}}
 function tCB(id){document.getElementById(id).classList.toggle('open');}
 
+// Para Inspección, cada NC vive en r.ncs[] con su propio estado — pero la fila
+// que se sincroniza a la pestaña "Inspecciones" de Sheets usa los campos del
+// informe completo (estadoMedida, fechaCierre, tsVerif), no los de cada NC.
+// Sin este recálculo, esos tres campos quedaban congelados en lo que tenían al
+// crear el informe y nunca se actualizaban al verificar una NC — por eso la
+// pestaña de NC se veía bien (lee directo de ncs[]) y la de Inspecciones no.
+function recalcularEstadoInspeccion(ri){
+  const r=db[ri];
+  if(!r||r.tipo!=='Inspeccion'||!r.ncs||!r.ncs.length) return;
+  if(r.ncs.every(n=>n.estado==='Verificada')){
+    r.estadoMedida='Verificada';
+    if(!r.fechaCierre) r.fechaCierre=hoy();
+    const tsVerifs=r.ncs.map(n=>n.tsVerif).filter(Boolean).sort();
+    if(tsVerifs.length) r.tsVerif=tsVerifs[tsVerifs.length-1];
+  }else{
+    r.estadoMedida='Pendiente';
+    r.fechaCierre='';
+  }
+}
+
 function sEN(ri,ni,e){
-  if(ni>=0){db[ri].ncs[ni].estado=e;if(e==='Verificada')db[ri].ncs[ni].tsVerif=fh();}
+  if(ni>=0){db[ri].ncs[ni].estado=e;if(e==='Verificada')db[ri].ncs[ni].tsVerif=fh();recalcularEstadoInspeccion(ri);}
   else{db[ri].estadoMedida=e;if(e==='Verificada'){db[ri].fechaCierre=hoy();db[ri].tsVerif=fh();}}
   sv();eS({...db[ri],_update:true});rHN();
 }
@@ -2444,6 +2550,7 @@ function gEv(ri,ni,gi,inp){
 function gCV(ri,ni,gi){
   const com=document.getElementById('vc'+gi).value;
   if(ni>=0)db[ri].ncs[ni].comentario=com;else db[ri].comentarioVerif=com;
+  recalcularEstadoInspeccion(ri);
   sv();eS({...db[ri],_update:true});rHN();
 }
 
@@ -2463,7 +2570,7 @@ function setFiltroInf(f,btn){
 function rHI(){
   const cont=document.getElementById('hist-inf-cont');
   const vista=getVistaDB();
-  let lista=filtroInf==='todos'?[...vista]:[...vista].filter(r=>r.tipo===filtroInf);
+  let lista=filtroInf==='todos'?[...vista]:filtroInf==='CondicionInsegura'?vista.filter(r=>r.tipo==='CondicionInsegura'||r.tipo==='AccionInsegura'):[...vista].filter(r=>r.tipo===filtroInf);
   const q=(document.getElementById('inf-search')?.value||'').trim().toLowerCase();
   if(q) lista=lista.filter(r=>
     (r.folio||'').toLowerCase().includes(q) ||
@@ -2475,7 +2582,7 @@ function rHI(){
     (r.fecha||'').toLowerCase().includes(q)
   );
   if(!lista.length){cont.innerHTML='<div style="font-size:13px;color:var(--muted);padding:8px 0">Sin registros</div>';return;}
-  const cfg={Inspeccion:['#E6F1FB','#0C447C','Inspección'],Observacion:['var(--green-bg)','var(--green)','Observación'],CondicionInsegura:['var(--red-bg)','var(--red)','Cond. insegura'],AccionInsegura:['var(--orange-bg)','var(--orange)','Acción insegura']};
+  const cfg={Inspeccion:['#E6F1FB','#0C447C','Inspección'],Observacion:['var(--green-bg)','var(--green)','Observación'],CondicionInsegura:['var(--red-bg)','var(--red)','Cond. insegura'],AccionInsegura:['var(--orange-bg)','var(--orange)','Acción insegura'],Caminata:['#E8F0FB','#0F4C81','Caminata'],Hallazgo:['#F3E8FB','#6B21A8','Hallazgo']};
   cont.innerHTML=[...lista].reverse().map(r=>{
     const ri=db.indexOf(r);
     const[bg,col,lb]=cfg[r.tipo]||['#F1EFE8','#444','Registro'];
@@ -2522,7 +2629,7 @@ function verInforme(ri,origen){
   previewOrigen=origen||'s-hist-inf';
   const r=db[ri];if(!r)return;
   previewRi=ri;
-  const cfg={Inspeccion:['#E6F1FB','#0C447C','Inspección'],Observacion:['var(--green-bg)','var(--green)','Observación'],CondicionInsegura:['var(--red-bg)','var(--red)','Condición insegura'],AccionInsegura:['var(--orange-bg)','var(--orange)','Acción insegura'],Caminata:['#E8F0FB','#0F4C81','Caminata']};
+  const cfg={Inspeccion:['#E6F1FB','#0C447C','Inspección'],Observacion:['var(--green-bg)','var(--green)','Observación'],CondicionInsegura:['var(--red-bg)','var(--red)','Condición insegura'],AccionInsegura:['var(--orange-bg)','var(--orange)','Acción insegura'],Caminata:['#E8F0FB','#0F4C81','Caminata'],Hallazgo:['#F3E8FB','#6B21A8','Hallazgo']};
   const[bg,col,lb]=cfg[r.tipo]||['#F1EFE8','#444','Registro'];
   let html=`<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;flex-wrap:wrap">
     <span class="badge" style="background:${bg};color:${col}">${lb}</span>
@@ -2994,41 +3101,52 @@ function construirDocPDF(tipo,d){
   const firma = usr.firma || null;
   const pageW = doc.internal.pageSize.getWidth();
   const cx = pageW / 2;
+  const lineY = firmaAreaTop + 14;
 
   // Línea naranja separadora — posición absoluta
   doc.setFillColor(232,80,10);
   doc.rect(0, firmaAreaTop, W, 1.5, 'F');
-
-  // Línea de firma y textos en posiciones fijas (la imagen irá ENCIMA, superpuesta)
-  const lineY = firmaAreaTop + 14;
-  doc.setDrawColor(180,180,180);
-  doc.line(cx-35, lineY, cx+35, lineY);
-  let ty = lineY + 4;
-  doc.setFontSize(8.5); doc.setTextColor(26,26,26); doc.setFont('helvetica','bold');
-  doc.text(san(usr.nombre||d.inspector||''), cx, ty, {align:'center'}); ty += 4.5;
-  doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80); doc.setFontSize(8);
-  doc.text(san(usr.cargo||d.cargo||''), cx, ty, {align:'center'}); ty += 4;
-  if(usr.registro||d.registro){
-    doc.setTextColor(140,140,140); doc.setFontSize(7.5);
-    doc.text('Reg. '+san(usr.registro||d.registro||''), cx, ty, {align:'center'});
-  }
   doc.setFontSize(6.5); doc.setTextColor(160,160,160);
   doc.text('Emitido el '+em+' — Aerovias DAP', W-M, PH-2, {align:'right'});
 
-  // Imagen de firma AL FINAL — se dibuja encima de la línea y el nombre,
-  // como una firma real estampada "delante del texto".
-  // Respeta la proporción real de la imagen (evita que se vea estirada o achatada).
-  if(firma){
-    const maxW = 50, maxH = 22; // caja máxima disponible
-    let iw=1, ih=1;
-    try{ const props = doc.getImageProperties(firma); iw=props.width; ih=props.height; }catch(e){}
-    const ratio = iw/ih || 2.3;
-    let firmaW = maxW, firmaH = maxW/ratio;
-    if(firmaH > maxH){ firmaH = maxH; firmaW = maxH*ratio; }
-    const overlap = firmaH*0.35; // cuánto cruza bajo la línea, proporcional al alto real
-    const firmaY = lineY - firmaH + overlap;
-    try{ doc.addImage(firma,'PNG', cx-(firmaW/2), firmaY, firmaW, firmaH); }
-    catch(e){ try{ doc.addImage(firma,'JPEG', cx-(firmaW/2), firmaY, firmaW, firmaH); }catch(e2){} }
+  // Dibuja un bloque de firma (línea + nombre + cargo + registro opcional + imagen
+  // superpuesta) centrado en centroX. Reutilizable para 1 o 2 firmantes.
+  function dibujarBloqueFirma(centroX, nombre, cargo, registroTxt, firmaImg){
+    doc.setDrawColor(180,180,180);
+    doc.line(centroX-30, lineY, centroX+30, lineY);
+    let ty = lineY + 4;
+    doc.setFontSize(8.5); doc.setTextColor(26,26,26); doc.setFont('helvetica','bold');
+    doc.text(san(nombre||''), centroX, ty, {align:'center'}); ty += 4.5;
+    doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80); doc.setFontSize(8);
+    doc.text(san(cargo||''), centroX, ty, {align:'center'}); ty += 4;
+    if(registroTxt){
+      doc.setTextColor(140,140,140); doc.setFontSize(7.5);
+      doc.text(san(registroTxt), centroX, ty, {align:'center'});
+    }
+    // Imagen de firma AL FINAL — se dibuja encima de la línea y el nombre,
+    // como una firma real estampada "delante del texto". Respeta la proporción
+    // real de la imagen (evita que se vea estirada o achatada).
+    if(firmaImg){
+      const maxW = 44, maxH = 20;
+      let iw=1, ih=1;
+      try{ const props = doc.getImageProperties(firmaImg); iw=props.width; ih=props.height; }catch(e){}
+      const ratio = iw/ih || 2.3;
+      let firmaW = maxW, firmaH = maxW/ratio;
+      if(firmaH > maxH){ firmaH = maxH; firmaW = maxH*ratio; }
+      const overlap = firmaH*0.35; // cuánto cruza bajo la línea, proporcional al alto real
+      const firmaY = lineY - firmaH + overlap;
+      try{ doc.addImage(firmaImg,'PNG', centroX-(firmaW/2), firmaY, firmaW, firmaH); }
+      catch(e){ try{ doc.addImage(firmaImg,'JPEG', centroX-(firmaW/2), firmaY, firmaW, firmaH); }catch(e2){} }
+    }
+  }
+
+  const regTxt = (usr.registro||d.registro) ? ('Reg. '+san(usr.registro||d.registro||'')) : '';
+  if(tipo==='caminata' && d.firmaTercero){
+    // Dos firmantes lado a lado: quien inspecciona (izquierda) y quien acompaña (derecha)
+    dibujarBloqueFirma(cx-48, usr.nombre||d.inspector||'', usr.cargo||d.cargo||'', regTxt, firma);
+    dibujarBloqueFirma(cx+48, d.firmaTerceroNombre||'', d.firmaTerceroCargo||'', '', d.firmaTercero);
+  }else{
+    dibujarBloqueFirma(cx, usr.nombre||d.inspector||'', usr.cargo||d.cargo||'', regTxt, firma);
   }
 
   return doc;
@@ -3099,7 +3217,7 @@ let extEditIdx = null;
 function iExt(){
   if(!usuarioActivo){alert('Configura tu perfil primero');gt('s-usuarios');return;}
   const f=document.getElementById('ext-fecha').value;
-  const a=document.getElementById('ext-area').value;
+  const a=resolverAreaSimple('ext-area','ext-area-otro');
   if(!f||!a){alert('Completa fecha y área');return;}
   extList=[];
   rExtList();
@@ -3244,7 +3362,7 @@ function fExt(sinPDF){
   extDatos={
     fecha:document.getElementById('ext-fecha').value,
     hora:document.getElementById('ext-hora').value,
-    area:document.getElementById('ext-area').value,
+    area:resolverAreaSimple('ext-area','ext-area-otro'),
     rs:document.getElementById('ext-rs').value,
     notas:document.getElementById('ext-notas').value,
     obs:document.getElementById('ext-obs').value,
@@ -3293,10 +3411,44 @@ const CAM_ITEMS = [
 
 let camItems = [];
 
+// FIRMA DE CONFORMIDAD (CAMINATA) — canvas dibujable, mouse y touch via Pointer Events
+let camFirmaCtx=null, camFirmaDrawing=false, camFirmaTieneTrazo=false;
+function initFirmaCam(){
+  const cv=document.getElementById('cam-firma-canvas');
+  if(!cv) return;
+  const rect=cv.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  cv.width=rect.width*dpr; cv.height=150*dpr;
+  camFirmaCtx=cv.getContext('2d');
+  camFirmaCtx.scale(dpr,dpr);
+  camFirmaCtx.fillStyle='#fff'; camFirmaCtx.fillRect(0,0,rect.width,150);
+  camFirmaCtx.strokeStyle='#1A1A1A'; camFirmaCtx.lineWidth=2.2; camFirmaCtx.lineCap='round'; camFirmaCtx.lineJoin='round';
+  camFirmaTieneTrazo=false;
+  const posFirma=(e)=>{const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};};
+  cv.onpointerdown=(e)=>{camFirmaDrawing=true;const p=posFirma(e);camFirmaCtx.beginPath();camFirmaCtx.moveTo(p.x,p.y);};
+  cv.onpointermove=(e)=>{if(!camFirmaDrawing)return;const p=posFirma(e);camFirmaCtx.lineTo(p.x,p.y);camFirmaCtx.stroke();camFirmaTieneTrazo=true;};
+  cv.onpointerup=()=>{camFirmaDrawing=false;};
+  cv.onpointerleave=()=>{camFirmaDrawing=false;};
+  cv.onpointercancel=()=>{camFirmaDrawing=false;};
+}
+function limpiarFirmaCam(){
+  const cv=document.getElementById('cam-firma-canvas');
+  if(!cv||!camFirmaCtx) return;
+  const rect=cv.getBoundingClientRect();
+  camFirmaCtx.fillStyle='#fff'; camFirmaCtx.fillRect(0,0,rect.width,150);
+  camFirmaTieneTrazo=false;
+}
+// Devuelve null si nadie dibujó nada — así no se guarda un PNG en blanco como si fuera una firma real
+function getFirmaCamDataURL(){
+  const cv=document.getElementById('cam-firma-canvas');
+  if(!cv||!camFirmaTieneTrazo) return null;
+  return cv.toDataURL('image/png');
+}
+
 function iCam() {
   if (!usuarioActivo) { alert('Configura tu perfil primero'); gt('s-usuarios'); return; }
   var f = document.getElementById('cam-fecha').value;
-  var a = document.getElementById('cam-area').value;
+  var a = resolverAreaSimple('cam-area','cam-area-otro');
   if (!f || !a) { alert('Completa fecha y area'); return; }
   camItems = CAM_ITEMS.map(function(it) { return {n:it.n, sub:it.sub, d:it.d, critico:it.critico||false, aplica:null, cumple:null, obs:''}; });
   var html = '';
@@ -3389,7 +3541,7 @@ function fCam(sinPDF) {
     folio: cnt('Caminata'),
     fecha: document.getElementById('cam-fecha').value,
     hora: document.getElementById('cam-hora').value,
-    area: document.getElementById('cam-area').value,
+    area: resolverAreaSimple('cam-area','cam-area-otro'),
     razonSocial: document.getElementById('cam-rs').value,
     tipoCaminata: camTipo || 'Programado',
     inspector: usuarioActivo.nombre,
@@ -3397,6 +3549,9 @@ function fCam(sinPDF) {
     registro: usuarioActivo.registro || '',
     camItems: camItems.map(it => ({n:it.n, sub:it.sub, d:it.d, aplica:it.aplica, cumple:it.cumple, critico:it.critico||false, obs:it.obs, foto:it.foto||null})),
     obs: document.getElementById('cam-obs').value,
+    firmaTerceroNombre: document.getElementById('cam-firma-nombre').value.trim(),
+    firmaTerceroCargo: document.getElementById('cam-firma-cargo').value.trim(),
+    firmaTercero: getFirmaCamDataURL(),
     resumen: 'Caminata SSO-REC-001 - ' + ncs + ' hallazgos',
     estadoMedida: ncs > 0 ? 'Pendiente' : 'Cerrada',
     fechaCierre: '', tsVerif: '', fotoVerif: null,
